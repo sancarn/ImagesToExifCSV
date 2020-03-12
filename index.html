@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Images to CSV</title>
+	<meta charset="UTF-8" />
+	<script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+	<script>
+		window.addEventListener("load",function(){
+			console.log("loaded");
+			var input = document.getElementById("in");
+			console.log("input",input);
+			input.addEventListener("click",function(){
+				input.value="";
+			});
+			function getLatLng(file){
+				try {
+					var GPSLatRef = file.exifdata.GPSLatitudeRef=="N" ? 1 : -1;
+					var GPSLngRef = file.exifdata.GPSLongitudeRef=="E" ? 1 : -1;
+					var GPSLat = file.exifdata.GPSLatitude;
+					var GPSLng = file.exifdata.GPSLongitude;
+					var fLat = GPSLatRef * (GPSLat[0].valueOf()+GPSLat[1].valueOf()/60 + GPSLat[2].valueOf()/3600);
+					var fLng = GPSLngRef * (GPSLng[0].valueOf()+GPSLng[1].valueOf()/60 + GPSLng[2].valueOf()/3600);
+					var fAlt = (file.exifdata.GPSAltitudeRef==0 ? 1 : -1) * file.exifdata.GPSAltitude.toPrecision()
+					return {x:fLat,y:fLng,z:fAlt};
+				} catch (e){
+					return {x:0,y:0,z:0};
+				}
+
+			}
+			input.addEventListener("change",function(){
+				var data =["FileName,DateTime,Lat,Lng,Alt"];
+				for(var i=0;i<input.files.length;i++){
+					var file = input.files[i];
+					if(file && file.name){
+					 EXIF.getData(file,function(){
+						//  var exifData = EXIF.pretty(this);
+						 var xy = getLatLng(this);
+						 data.push(`"${this.name}","${this.exifdata.DateTimeOriginal}",${xy.x},${xy.y},${xy.z}`);
+						 console.log("data",data,"file",this);
+						 if(data.length-1 == input.files.length){
+							 document.getElementById("out").value = data.join("\n");
+						 }
+					  });
+				  };
+			  };
+		  });
+		});	
+	</script>
+</head>
+
+<body>
+	<div id="app">
+		<h1>Images to Exif</h1>
+	</div>
+	<input id="in" type="file" multiple style="display:block;"></input>
+	<textarea id="out" style="display:block;width:100%;height:400px;"></textarea>
+	</script>
+</body>
+
+</html>
